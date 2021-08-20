@@ -274,7 +274,9 @@ const
   errBadRoutine = "attempting to call routine: '$1'$2"
   errAmbiguousCallXYZ = "ambiguous call; both $1 and $2 match for: $3"
 
-import haxnim/submodule
+var presentFailedCandidates2*:
+  proc(c: PContext, n: PNode, errors: CandidateErrors):
+    (TPreferedDesc, string)
 
 proc notFoundError*(c: PContext, n: PNode, errors: CandidateErrors) =
   # Gives a detailed error message; this is separated from semOverloadedCall,
@@ -288,7 +290,13 @@ proc notFoundError*(c: PContext, n: PNode, errors: CandidateErrors) =
     localError(c.config, n.info, "expression '$1' cannot be called" % n[0].renderTree)
     return
 
-  let (prefer, candidates) = presentFailedCandidates2(c, n, errors)
+  let (prefer, candidates) =
+    if isNil(presentFailedCandidates2):
+      presentFailedCandidates(c, n, errors)
+
+    else:
+      presentFailedCandidates2(c, n, errors)
+
   var result = errTypeMismatch
   result.add(describeArgs(c, n, 1, prefer))
   result.add('>')
